@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Twetch Market Analysis</title>
+    </head>
+    <body></body>
+</html>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+    const txUrl = 'https://ink.twetch.com/twonks/market/sold?orderBy=created%20asc'
+    axios.get(txUrl)
+    .then(res => {
+        const transactions = res.data
+        
+        // Groups are as follows:
+        // { "title": { "date created": [{tx1, tx2, ...}] }, ...}
+        var groups = {}
+        transactions.forEach(tx => {
+            const metadata = JSON.parse(JSON.parse(tx.meta))
+            groups[metadata.title] = groups[metadata.title] || {}
+            var created = tx.created.split(' ')[0]
+            groups[metadata.title][created] = groups[metadata.title][created] || []
+            groups[metadata.title][created].push(tx)
+        });
+
+        // Results are as follows:
+        // { "title": [{ "time": "2021-02-24", "volume": float, "open": float, 
+        // "high": float, "low": float, "close": float }, { ... }] ... }
+        var results = {}
+        Object.keys(groups).forEach(title => {
+            Object.keys(groups[title]).forEach(time => {
+                var group = groups[title][time];
+                var high = 0, low = 999999999, volume = 0;
+                group.forEach(tx => {
+                    if (tx.price > high) { high = tx.price }
+                    if (low > tx.price) { low = tx.price }
+                    volume += tx.price;
+                });
+                var open = group[0].price;
+                var close = group[group.length - 1].price;
+                results[title] = results[title] || []
+                results[title].push({
+                    time, volume, open, high, low, close,
+                });
+            });
+        });
+
+        Object.keys(results).forEach(title => {
+            var element = document.createElement("div");
+            element.style = "float: left;"
+            const chart = LightweightCharts.createChart(element, { width: 400, height: 300 });
+            const candlestickSeries = chart.addCandlestickSeries();
+            document.body.appendChild(element);
+
+            // set data
+            candlestickSeries.setData(results[title]);
+            chart.timeScale().fitContent();
+
+            chart.applyOptions({
+                watermark: {
+                    color: 'rgba(11, 94, 29, 0.4)',
+                    visible: true,
+                    text: title,
+                    fontSize: 24,
+                    horzAlign: 'left',
+                    vertAlign: 'bottom',
+                },
+            });
+        })
+
+        
+    })
+    .catch(err => console.log(err))
+</script>
