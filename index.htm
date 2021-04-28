@@ -18,10 +18,11 @@
         var groups = {}
         transactions.forEach(tx => {
             const metadata = JSON.parse(JSON.parse(tx.meta))
-            groups[metadata.title] = groups[metadata.title] || {}
+            var title = metadata.title.split(" #")[0];
+            groups[title] = groups[title] || {}
             var created = tx.created.split(' ')[0]
-            groups[metadata.title][created] = groups[metadata.title][created] || []
-            groups[metadata.title][created].push(tx)
+            groups[title][created] = groups[title][created] || []
+            groups[title][created].push(tx)
         });
 
         // Results are as follows:
@@ -47,17 +48,28 @@
         });
 
         Object.keys(results).forEach(title => {
-            var element = document.createElement("div");
-            element.style = "float: left;"
-            const chart = LightweightCharts.createChart(element, { width: 400, height: 300 });
-            const candlestickSeries = chart.addCandlestickSeries();
-            document.body.appendChild(element);
+            var wrapper = document.createElement("div");
+            wrapper.style = "float: left;"
+            document.body.appendChild(wrapper);
+
+            const chart1 = LightweightCharts.createChart(wrapper, { width: 500, height: 300 });
+            const candlestickSeries = chart1.addCandlestickSeries();
+
+            const chart2 = LightweightCharts.createChart(wrapper, { width: 500, height: 100 });
+            const areaSeries = chart2.addAreaSeries();
 
             // set data
             candlestickSeries.setData(results[title]);
-            chart.timeScale().fitContent();
+            areaSeries.setData(results[title].map(x => {
+                return {
+                    time: x.time, value: x.volume,
+                }
+            }));
 
-            chart.applyOptions({
+            chart1.timeScale().fitContent();
+            chart2.timeScale().fitContent();
+
+            chart1.applyOptions({
                 watermark: {
                     color: 'rgba(11, 94, 29, 0.4)',
                     visible: true,
