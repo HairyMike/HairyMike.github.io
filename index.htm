@@ -8,7 +8,7 @@
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 <script>
-    const txUrl = 'https://ink.twetch.com/twonks/market/sold?orderBy=created%20desc'
+    const txUrl = 'https://ink.twetch.com/twonks/market/sold?orderBy=created%20asc'
     axios.get(txUrl)
     .then(res => {
         const transactions = res.data
